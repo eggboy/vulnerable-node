@@ -8,6 +8,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var log4js = require("log4js");
+var lusca = require('lusca');
 
 var init_db = require('./model/init_db');
 var login = require('./routes/login');
@@ -47,6 +48,9 @@ app.use(session({
     maxAge: 99999999999
   }
 }));
+
+// Add CSRF protection middleware
+app.use(lusca.csrf());
 
 /*
  * Routes config
