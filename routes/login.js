@@ -22,6 +22,11 @@ router.post('/login/auth', function(req, res) {
     var password = req.body.password;
     var returnurl = req.body.returnurl;
 
+    // Only allow relative paths starting with '/' (not double slashes, no http(s))
+    function isSafeRelativeUrl(u) {
+        return typeof u === 'string' && u.startsWith("/") && !u.startsWith("//") && !/^\/{2,}/.test(u) && !u.includes("://");
+    }
+
     logger.error("Tried to login attempt from user = " + user);
 
     auth(user, password)
@@ -29,14 +34,18 @@ router.post('/login/auth', function(req, res) {
             req.session.logged = true;
             req.session.user_name = user;
 
-            if (returnurl == undefined || returnurl == ""){
+            if (!isSafeRelativeUrl(returnurl)) {
                 returnurl = "/";
             }
 
             res.redirect(returnurl);
         })
         .catch(function (err) {
-            res.redirect("/login?returnurl=" + returnurl + "&error=" + err.message);
+            // Sanitize returnurl also in error path
+            if (!isSafeRelativeUrl(returnurl)) {
+                returnurl = "/";
+            }
+            res.redirect("/login?returnurl=" + encodeURIComponent(returnurl) + "&error=" + encodeURIComponent(err.message));
         });
 
 });
