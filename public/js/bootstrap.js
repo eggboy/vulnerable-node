@@ -1299,7 +1299,18 @@ if (typeof jQuery === 'undefined') {
     this.type      = type
     this.$element  = $(element)
     this.options   = this.getOptions(options)
-    this.$viewport = this.options.viewport && $($.isFunction(this.options.viewport) ? this.options.viewport.call(this, this.$element) : (this.options.viewport.selector || this.options.viewport))
+    // Prevent XSS via viewport.selector
+    function isValidSelector(sel) {
+      return typeof sel === "string" && sel.charAt(0) !== "<";
+    }
+    var vp = this.options.viewport;
+    var vpSelector = $.isFunction(vp) ? vp.call(this, this.$element) : (vp.selector || vp);
+    if (isValidSelector(vpSelector)) {
+      this.$viewport = $(vpSelector);
+    } else {
+      // Fallback to default 'body' if selector is invalid or potentially dangerous
+      this.$viewport = $("body");
+    }
     this.inState   = { click: false, hover: false, focus: false }
 
     if (this.$element[0] instanceof document.constructor && !this.options.selector) {
